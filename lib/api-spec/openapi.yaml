@@ -1,0 +1,368 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Bangla-first small business bookkeeping API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: dashboard
+    description: Dashboard summaries and recent activity
+  - name: products
+    description: Products and stock
+  - name: purchases
+    description: Purchases and landed cost
+  - name: sales
+    description: Sales and receivables
+  - name: expenses
+    description: Business expenses
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Dashboard totals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent activity
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Recent activity entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List products with stock
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Add a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Created product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+  /products/{id}:
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update a product
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a product
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Product deleted
+  /purchases:
+    get:
+      operationId: listPurchases
+      tags: [purchases]
+      summary: List purchases
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Purchases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Purchase"
+    post:
+      operationId: createPurchase
+      tags: [purchases]
+      summary: Record a purchase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseInput"
+      responses:
+        "201":
+          description: Created purchase
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Purchase"
+  /sales:
+    get:
+      operationId: listSales
+      tags: [sales]
+      summary: List sales
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Sales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sale"
+    post:
+      operationId: createSale
+      tags: [sales]
+      summary: Record a sale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaleInput"
+      responses:
+        "201":
+          description: Created sale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sale"
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: List expenses
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Record an expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseInput"
+      responses:
+        "201":
+          description: Created expense
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+    DashboardSummary:
+      type: object
+      required: [totalSales, totalPurchases, grossProfit, totalExpenses, totalReceivable, stockValue, productCount, lowStockCount]
+      properties:
+        totalSales: { type: number }
+        totalPurchases: { type: number }
+        grossProfit: { type: number }
+        totalExpenses: { type: number }
+        totalReceivable: { type: number }
+        stockValue: { type: number }
+        productCount: { type: integer }
+        lowStockCount: { type: integer }
+    Activity:
+      type: object
+      required: [id, type, title, amount, date]
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          enum: [sale, purchase, expense]
+        title: { type: string }
+        amount: { type: number }
+        date: { type: string, format: date-time }
+    Product:
+      type: object
+      required: [id, name, unit, minStock, purchasedQty, soldQty, stockQty, averageCost, stockValue, lowStock]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        unit: { type: string }
+        minStock: { type: number }
+        purchasedQty: { type: number }
+        soldQty: { type: number }
+        stockQty: { type: number }
+        averageCost: { type: number }
+        stockValue: { type: number }
+        lowStock: { type: boolean }
+    ProductInput:
+      type: object
+      required: [name, unit, minStock]
+      properties:
+        name: { type: string, minLength: 1 }
+        unit: { type: string, minLength: 1 }
+        minStock: { type: number, minimum: 0 }
+    ProductUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        unit: { type: string, minLength: 1 }
+        minStock: { type: number, minimum: 0 }
+    Purchase:
+      type: object
+      required: [id, date, supplier, productId, productName, quantity, unitCost, transportCost, otherCost, totalCost]
+      properties:
+        id: { type: integer }
+        date: { type: string, format: date }
+        supplier: { type: string }
+        productId: { type: integer }
+        productName: { type: string }
+        quantity: { type: number }
+        unitCost: { type: number }
+        transportCost: { type: number }
+        otherCost: { type: number }
+        totalCost: { type: number }
+    PurchaseInput:
+      type: object
+      required: [date, supplier, productId, quantity, unitCost]
+      properties:
+        date: { type: string, format: date }
+        supplier: { type: string }
+        productId: { type: integer, minimum: 1 }
+        quantity: { type: number, exclusiveMinimum: 0 }
+        unitCost: { type: number, minimum: 0 }
+        transportCost: { type: number, minimum: 0, default: 0 }
+        otherCost: { type: number, minimum: 0, default: 0 }
+    Sale:
+      type: object
+      required: [id, date, customer, productId, productName, quantity, unitPrice, totalAmount, unitCost, profit, receivedAmount, dueAmount, status]
+      properties:
+        id: { type: integer }
+        date: { type: string, format: date }
+        customer: { type: string }
+        productId: { type: integer }
+        productName: { type: string }
+        quantity: { type: number }
+        unitPrice: { type: number }
+        totalAmount: { type: number }
+        unitCost: { type: number }
+        profit: { type: number }
+        receivedAmount: { type: number }
+        dueAmount: { type: number }
+        status:
+          type: string
+          enum: [paid, due]
+    SaleInput:
+      type: object
+      required: [date, customer, productId, quantity, unitPrice, receivedAmount]
+      properties:
+        date: { type: string, format: date }
+        customer: { type: string }
+        productId: { type: integer, minimum: 1 }
+        quantity: { type: number, exclusiveMinimum: 0 }
+        unitPrice: { type: number, minimum: 0 }
+        receivedAmount: { type: number, minimum: 0, default: 0 }
+    Expense:
+      type: object
+      required: [id, date, category, description, amount]
+      properties:
+        id: { type: integer }
+        date: { type: string, format: date }
+        category: { type: string }
+        description: { type: string }
+        amount: { type: number, minimum: 0 }
+    ExpenseInput:
+      type: object
+      required: [date, category, description, amount]
+      properties:
+        date: { type: string, format: date }
+        category: { type: string }
+        description: { type: string }
+        amount: { type: number, minimum: 0 }
